@@ -113,8 +113,8 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
 .on{color:var(--accent)!important}
 .sec{font-size:12.5px;color:var(--muted);padding:22px 0 2px}
 .foot{flex-wrap:wrap;row-gap:10px}
-.top{position:sticky;top:0;z-index:3;background:var(--bg);margin-top:calc(-1*env(safe-area-inset-top));padding-top:calc(28px + env(safe-area-inset-top))}
-.page{position:fixed;inset:0;z-index:5;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;transform:translate3d(100%,0,0);visibility:hidden;transition:transform .34s cubic-bezier(.22,.8,.24,1),visibility 0s .34s;will-change:transform}
+
+.page{position:fixed;inset:0;z-index:5;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;transform:translate3d(100%,0,0);visibility:hidden;transition:transform .34s cubic-bezier(.22,.8,.24,1),visibility 0s .34s;will-change:transform}
 .page.open{transform:none;visibility:visible;transition:transform .34s cubic-bezier(.22,.8,.24,1),visibility 0s}
 .page .bar{position:sticky;top:0;z-index:1;background:var(--bg);margin-top:calc(-1*env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}
 .page .wrap{padding-bottom:calc(48px + env(safe-area-inset-bottom))}
@@ -160,6 +160,13 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
 .rn-items .row{padding:12px 0}
 .rn-items li:last-child .row{border-bottom:0}
 .sheet .sheet-bar{position:sticky;bottom:-28px;background:var(--bg);margin:18px -20px -28px;padding:12px 20px calc(20px + env(safe-area-inset-bottom));z-index:1}
+html,body{height:100%;overflow:hidden}
+html{overscroll-behavior:none}
+#main,#view-home{height:100%}
+#view-home{display:flex;flex-direction:column}
+.wrap.head{padding-bottom:0;flex:none;width:100%}
+.wrap.body{padding-top:0}
+#scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
 .empty{color:var(--muted);padding:40px 0;font-size:15px;max-width:34ch}
 
 .fab{position:fixed;right:max(20px,calc(50% - 260px));bottom:calc(24px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:28px;line-height:1;display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.18)}
@@ -203,9 +210,9 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
 </style>
 </head>
 <body>
-<div class="wrap" id="main">
+<div id="main">
 
-  <div id="view-home">
+  <div id="view-home"><div class="wrap head">
     <div class="top" role="tablist">
       <button class="tab" id="tab-shelf" role="tab" aria-selected="true" data-act="tab" data-tab="shelf">Полка</button>
       <button class="tab" id="tab-notes" role="tab" aria-selected="false" data-act="tab" data-tab="notes">Заметки</button>
@@ -213,6 +220,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
       <button class="tab star" id="tab-fav" role="tab" aria-selected="false" data-act="tab" data-tab="fav" aria-label="Избранное">★</button>
     </div>
     <div class="banner" id="banner" hidden></div>
+    </div><div id="scroll"><div class="wrap body">
 
     <div id="pane-shelf">
       <div class="searchbar"><input class="search" id="search" type="search" placeholder="Поиск" autocomplete="off" aria-label="Поиск"><button class="flt" id="mapbtn" data-act="map" aria-label="Карта" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="5" cy="6" r="2.2"/><circle cx="15" cy="5" r="2.2"/><circle cx="10" cy="15" r="2.2"/><path d="M7 6.2l5.9-.8M6 8l3 5M14 7l-3 6"/></svg></button><button class="flt" id="flt" data-act="flt" aria-label="Фильтр по типу" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h14M6 10h8M8.5 14h3"/></svg></button></div>
@@ -247,6 +255,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
       <input type="file" id="import-file" accept="application/json,.json" hidden>
     </div>
 
+    </div></div>
     <button class="fab" id="fab" data-act="new" aria-label="Добавить">+</button>
   </div>
 
@@ -760,16 +769,16 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     if(!t)return;
     var act=t.dataset.act, it=ui.openId?byId(ui.openId):null;
     if(act!=='del-note'&&act!=='del-item')ui.armed=null;
-    if(act==='tab'){ui.tab=t.dataset.tab;banner('');homeFresh=false;render();window.scrollTo(0,0)}
+    if(act==='tab'){ui.tab=t.dataset.tab;banner('');homeFresh=false;render();$('#scroll').scrollTop=0}
     else if(act==='filter'){ui.filter=t.dataset.f;ui.limit=80;render()}
     else if(act==='flt'){ui.showTypes=!ui.showTypes;if(ui.showTypes)ui.map=false;renderShelf()}
     else if(act==='corefilter'){ui.core=!ui.core;ui.limit=80;render()}
-    else if(act==='map'){ui.map=!ui.map;ui.mfocus=null;ui.mpair=null;ui.limit=80;renderShelf();window.scrollTo(0,0)}
-    else if(act==='mnode'){var mt=t.dataset.t;if(!ui.mfocus){ui.mfocus=mt;ui.mpair=null;ui.mnode=null;window.scrollTo(0,0)}else if(mt===ui.mfocus){ui.mpair=null}else{ui.mpair=ui.mpair===mt?null:mt}ui.limit=80;renderShelf()}
-    else if(act==='mback'){ui.mfocus=null;ui.mpair=null;ui.mnode=null;renderShelf();window.scrollTo(0,0)}
+    else if(act==='map'){ui.map=!ui.map;ui.mfocus=null;ui.mpair=null;ui.limit=80;renderShelf();$('#scroll').scrollTop=0}
+    else if(act==='mnode'){var mt=t.dataset.t;if(!ui.mfocus){ui.mfocus=mt;ui.mpair=null;ui.mnode=null;$('#scroll').scrollTop=0}else if(mt===ui.mfocus){ui.mpair=null}else{ui.mpair=ui.mpair===mt?null:mt}ui.limit=80;renderShelf()}
+    else if(act==='mback'){ui.mfocus=null;ui.mpair=null;ui.mnode=null;renderShelf();$('#scroll').scrollTop=0}
     else if(act==='mview'){ui.mview=t.dataset.v;ui.mpair=null;renderShelf()}
     else if(act==='msub'){var mi=+t.dataset.i;ui.mnode=ui.mnode===mi?null:mi;renderShelf()}
-    else if(act==='mall'){ui.tag=ui.mfocus;ui.map=false;ui.filter='all';ui.limit=80;renderShelf();window.scrollTo(0,0)}
+    else if(act==='mall'){ui.tag=ui.mfocus;ui.map=false;ui.filter='all';ui.limit=80;renderShelf();$('#scroll').scrollTop=0}
     else if(act==='typefilter'){ui.type=ui.type===t.dataset.t?null:t.dataset.t;ui.limit=80;render()}
     else if(act==='tagfilter'){ui.tag=ui.tag===t.dataset.t?null:t.dataset.t;ui.limit=80;render()}
     else if(act==='tagpick'){var ix=ui.sheetTags.indexOf(t.dataset.t);if(ix>=0)ui.sheetTags.splice(ix,1);else ui.sheetTags.push(t.dataset.t);renderTagPick()}
@@ -911,7 +920,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     if(ev.cancelable)ev.preventDefault();
     var over=liOf(document.elementFromPoint(x,y));
     if(over&&over!==drag&&rid(over)){var r=over.getBoundingClientRect();listEl.insertBefore(drag,y>r.top+r.height/2?over.nextSibling:over)}
-    if(y<90)window.scrollBy(0,-14);else if(y>window.innerHeight-90)window.scrollBy(0,14);
+    if(y<90)$('#scroll').scrollBy(0,-14);else if(y>window.innerHeight-90)$('#scroll').scrollBy(0,14);
   }
   function pressEnd(){
     clearTimeout(pressT);if(!drag)return;var li=drag;drag=null;li.classList.remove('dragging');
