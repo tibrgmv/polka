@@ -159,6 +159,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
 .rn-items{margin-top:4px}
 .rn-items .row{padding:12px 0}
 .rn-items li:last-child .row{border-bottom:0}
+.sheet .sheet-bar{position:sticky;bottom:-28px;background:var(--bg);margin:18px -20px -28px;padding:12px 20px calc(20px + env(safe-area-inset-bottom));z-index:1}
 .empty{color:var(--muted);padding:40px 0;font-size:15px;max-width:34ch}
 
 .fab{position:fixed;right:max(20px,calc(50% - 260px));bottom:calc(24px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:28px;line-height:1;display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.18)}
@@ -193,7 +194,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:10}
 .sheet{background:var(--bg);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:22px 20px 28px;max-height:92%;overflow:auto}
 .sheet h2{font-size:18px;margin:0 0 10px;font-weight:600}
-.field{display:block;border-bottom:1px solid var(--line);padding:10px 0}
+.field{display:block;border-bottom:1px solid var(--line);padding:8px 0}
 .field span{display:block;font-size:12.5px;color:var(--muted)}
 .field input,.field select{width:100%;border:0;background:none;outline:0;padding:4px 0;border-radius:0;-webkit-appearance:none;appearance:none}
 .sheet-bar{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
@@ -295,7 +296,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     <label class="field" for="f-url"><span>Ссылка</span><input id="f-url" inputmode="url" placeholder="https://"></label>
     <label class="field" for="f-about"><span>О чём</span><input id="f-about" placeholder="Необязательно"></label>
     <label class="field" for="f-parts"><span>Частей: серий, глав, лекций</span><input id="f-parts" inputmode="numeric" placeholder="Необязательно"></label>
-    <div class="field"><span>Метки</span><div class="tags" id="f-tags"></div><input id="f-tag-new" placeholder="Своя метка" enterkeyhint="done" aria-label="Своя метка"></div>
+    <div class="field"><span>Метки</span><div class="tags scroll" id="f-tags"></div><input id="f-tag-new" placeholder="Своя метка" enterkeyhint="done" aria-label="Своя метка"></div>
     <div class="sheet-bar">
       <button type="button" class="btn ghost" data-act="close-sheet">Отмена</button>
       <button type="submit" class="btn">Сохранить</button>
@@ -721,13 +722,14 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     ui.sheetTags=it?tagsOf(it).slice():(ui.tag?[ui.tag]:[]);
     var dr=drafts.item;
     if(dr&&dr.id===(it?it.id:'')){$('#f-title').value=dr.title;$('#f-author').value=dr.author;$('#f-type').value=dr.type;$('#f-url').value=dr.url;$('#f-about').value=dr.about;$('#f-parts').value=dr.parts;ui.sheetTags=dr.tags||[]}
-    $('#f-tag-new').value='';renderTagPick();
+    $('#f-tag-new').value='';renderTagPick(true);
     $('#overlay').hidden=false;
     setTimeout(function(){$('#f-title').focus()},50);
   }
   function renderTagPick(){
     var all=PRESETS.slice();
     usedTags().concat(ui.sheetTags).forEach(function(t){if(all.indexOf(t)<0)all.push(t)});
+    if(arguments[0]){all.sort(function(a,b){return (ui.sheetTags.indexOf(b)>=0)-(ui.sheetTags.indexOf(a)>=0)});ui.tagOrder=all.slice();$('#f-tags').scrollLeft=0}else if(ui.tagOrder){all.sort(function(a,b){var x=ui.tagOrder.indexOf(a),y=ui.tagOrder.indexOf(b);return (x<0?1e9:x)-(y<0?1e9:y)})}
     $('#f-tags').innerHTML=all.map(function(t){return tg(t,'tagpick',ui.sheetTags.indexOf(t)>=0)}).join('');
   }
   function addNewTag(){
