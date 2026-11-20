@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Полка">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
@@ -113,10 +113,10 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
 .on{color:var(--accent)!important}
 .sec{font-size:12.5px;color:var(--muted);padding:22px 0 2px}
 .foot{flex-wrap:wrap;row-gap:10px}
-.top{position:sticky;top:0;z-index:3;background:var(--bg)}
+.top{position:sticky;top:0;z-index:3;background:var(--bg);margin-top:calc(-1*env(safe-area-inset-top));padding-top:calc(28px + env(safe-area-inset-top))}
 .page{position:fixed;inset:0;z-index:5;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;transform:translate3d(100%,0,0);visibility:hidden;transition:transform .34s cubic-bezier(.22,.8,.24,1),visibility 0s .34s;will-change:transform}
 .page.open{transform:none;visibility:visible;transition:transform .34s cubic-bezier(.22,.8,.24,1),visibility 0s}
-.page .bar{position:sticky;top:0;z-index:1;background:var(--bg)}
+.page .bar{position:sticky;top:0;z-index:1;background:var(--bg);margin-top:calc(-1*env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}
 .page .wrap{padding-bottom:calc(48px + env(safe-area-inset-bottom))}
 .overlay{transition:opacity .24s ease,visibility 0s}
 .overlay[hidden]{display:flex!important;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .24s ease,visibility 0s .24s}
@@ -131,6 +131,12 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
 .pane-in{animation:paneIn .22s ease both}
 #items li.dragging{transition:box-shadow .15s ease}
 @media (prefers-reduced-motion:reduce){.page,.page.open,.sheet,.overlay,.overlay[hidden]{transition:none}.pane-in{animation:none}}
+.searchbar{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.searchbar:focus-within{border-bottom-color:var(--ink)}
+.searchbar .search{border-bottom:0;flex:1;min-width:0}
+.flt{color:var(--muted);padding:8px 0 8px 12px;display:grid;place-items:center;transition:color .18s ease,opacity .15s ease}
+.flt:active{opacity:.5}
+.tg.plain::before{display:none}
 .empty{color:var(--muted);padding:40px 0;font-size:15px;max-width:34ch}
 
 .fab{position:fixed;right:max(20px,calc(50% - 260px));bottom:calc(24px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:28px;line-height:1;display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.18)}
@@ -186,7 +192,8 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     <div class="banner" id="banner" hidden></div>
 
     <div id="pane-shelf">
-      <input class="search" id="search" type="search" placeholder="Поиск" autocomplete="off" aria-label="Поиск">
+      <div class="searchbar"><input class="search" id="search" type="search" placeholder="Поиск" autocomplete="off" aria-label="Поиск"><button class="flt" id="flt" data-act="flt" aria-label="Фильтр по типу" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h14M6 10h8M8.5 14h3"/></svg></button></div>
+      <div class="tags scroll" id="typechips" hidden></div>
       <div class="chips" id="chips"></div>
       <div class="tags scroll" id="tagchips"></div>
       <ul class="list" id="items"></ul>
@@ -348,7 +355,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
   var SEED=window.POLKA_LIBRARY||[], QS=(window.POLKA_QUESTIONS||[]).concat(uq);
   var LSA='polka-answers-v1', answers={};
   try{answers=JSON.parse(localStorage.getItem(LSA)||'{}')||{}}catch(e){answers={}}
-  var ui={tab:'shelf', filter:'all', tag:null, openQ:null, limit:80, qlimit:80, lastTab:null, sub:'notes', editWord:null, editNote:null, qtag:null, qfilter:'all', sheetTags:[], q:'', openId:null, editId:null, armed:null};
+  var ui={tab:'shelf', filter:'all', tag:null, openQ:null, type:null, showTypes:false, limit:80, qlimit:80, lastTab:null, sub:'notes', editWord:null, editNote:null, qtag:null, qfilter:'all', sheetTags:[], q:'', openId:null, editId:null, armed:null};
   var queue=Promise.resolve();
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -457,6 +464,12 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     $('#chips').innerHTML=chips.map(function(c){
       return '<button class="chip" data-act="filter" data-f="'+c[0]+'" aria-pressed="'+(ui.filter===c[0])+'">'+c[1]+'<span>'+(counts[c[0]]||0)+'</span></button>';
     }).join('');
+    var tc={};items.forEach(function(i){if(i.type)tc[i.type]=(tc[i.type]||0)+1});
+    var types=Object.keys(tc).sort(function(a,b){return tc[b]-tc[a]});
+    if(ui.type&&!tc[ui.type])ui.type=null;
+    var tce=$('#typechips');tce.hidden=!ui.showTypes;
+    tce.innerHTML=types.map(function(t){return '<button class="tg plain" data-act="typefilter" data-t="'+esc(t)+'" aria-pressed="'+(ui.type===t)+'">'+esc(t)+'</button>'}).join('');
+    var fb=$('#flt');fb.classList.toggle('on',!!ui.type);fb.setAttribute('aria-expanded',ui.showTypes);
     var used=usedTags();
     if(ui.tag&&used.indexOf(ui.tag)<0)ui.tag=null;
     $('#tagchips').innerHTML=used.map(function(t){return tg(t,'tagfilter',ui.tag===t)}).join('');
@@ -464,6 +477,7 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     var list=items.filter(function(i){
       if(ui.filter!=='all'&&(i.status||'want')!==ui.filter)return false;
       if(ui.tag&&tagsOf(i).indexOf(ui.tag)<0)return false;
+      if(ui.type&&i.type!==ui.type)return false;
       if(!q)return true;
       var hay=[i.title,i.author,i.type].concat(tagsOf(i)).concat(notesOf(i).map(function(n){return n.text})).join(' ').toLowerCase();
       return hay.indexOf(q)>=0;
@@ -624,6 +638,8 @@ button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-c
     if(act!=='del-note'&&act!=='del-item')ui.armed=null;
     if(act==='tab'){ui.tab=t.dataset.tab;banner('');homeFresh=false;render();window.scrollTo(0,0)}
     else if(act==='filter'){ui.filter=t.dataset.f;ui.limit=80;render()}
+    else if(act==='flt'){ui.showTypes=!ui.showTypes;renderShelf()}
+    else if(act==='typefilter'){ui.type=ui.type===t.dataset.t?null:t.dataset.t;ui.limit=80;render()}
     else if(act==='tagfilter'){ui.tag=ui.tag===t.dataset.t?null:t.dataset.t;ui.limit=80;render()}
     else if(act==='tagpick'){var ix=ui.sheetTags.indexOf(t.dataset.t);if(ix>=0)ui.sheetTags.splice(ix,1);else ui.sheetTags.push(t.dataset.t);renderTagPick()}
     else if(act==='sub'){ui.sub=t.dataset.f;render()}
